@@ -18,6 +18,7 @@ No hallucinations. No guessing. Every answer comes directly from your document.
 ---
 
 ## Demo
+[Live app](https://your-streamlit-url.streamlit.app)
 
 Upload a PDF, DOCX, TXT, CSV, HTML, or Markdown file and start asking:
 
