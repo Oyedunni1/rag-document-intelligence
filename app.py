@@ -209,7 +209,7 @@ with col1:
                 unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "",
+        "Upload a document",
         type=["pdf", "txt", "docx", "csv", "md", "html"],
         label_visibility="collapsed",
         key=f"uploader_{st.session_state.uploader_key}"
