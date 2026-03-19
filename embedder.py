@@ -5,7 +5,14 @@ from google import genai
 from google.genai import types
 
 load_dotenv()
-client_ai = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+try:
+    import streamlit as st
+    api_key = st.secrets["GOOGLE_API_KEY"]
+except Exception:
+    api_key = os.getenv("GOOGLE_API_KEY")
+
+client_ai = genai.Client(api_key=api_key)
 client_db = chromadb.PersistentClient(path="./chroma_db")
 
 
