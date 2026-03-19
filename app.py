@@ -184,6 +184,9 @@ if "doc_name" not in st.session_state:
     st.session_state.doc_name = ""
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
+if "session_id" not in st.session_state:
+    import uuid
+    st.session_state.session_id = str(uuid.uuid4())[:8]
 
 
 # --- HERO ---
@@ -223,7 +226,7 @@ with col1:
 
                 text = load_document(tmp_path)
                 chunks = chunk_text(text)
-                embed_and_store(chunks)
+                embed_and_store(chunks, collection_name=st.session_state.session_id)
                 os.unlink(tmp_path)
 
                 st.session_state.doc_loaded = True
@@ -253,27 +256,27 @@ with col1:
 
         st.markdown("<hr class='custom-divider'>", unsafe_allow_html=True)
 
-        if st.button("Clear and upload new doc", use_container_width=True):
-            st.session_state.doc_loaded = False
-            st.session_state.doc_name = ""
-            st.session_state.messages = []
-            st.session_state.uploader_key += 1  # forces uploader to reset
+    if st.button("🗑 Clear and upload new doc", use_container_width=True):
+       st.session_state.doc_loaded = False
+       st.session_state.doc_name = ""
+       st.session_state.messages = []
+       st.session_state.uploader_key += 1
 
-            from embedder import client_db
-            try:
-                client_db.reset()
-            except Exception:
-                pass
+       from embedder import client_db
+       try:
+            client_db.delete_collection(st.session_state.session_id)
+       except Exception:
+            pass
 
-            gc.collect()
+       gc.collect()
 
-            if os.path.exists("./chroma_db"):
-                try:
-                    shutil.rmtree("./chroma_db")
-                except Exception:
-                    pass
+    if os.path.exists("./chroma_db"):
+        try:
+            shutil.rmtree("./chroma_db")
+        except Exception:
+            pass
 
-            st.rerun()
+    st.rerun()
 
 
 # --- RIGHT COLUMN: CHAT ---
@@ -310,7 +313,7 @@ with col2:
             del st.session_state.pending_question
             st.session_state.messages.append({"role": "user", "content": question})
             with st.spinner("Thinking..."):
-                answer = retrieve_and_answer(question)
+                answer = answer = retrieve_and_answer(question, collection_name=st.session_state.session_id)
             st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
 
@@ -325,6 +328,6 @@ with col2:
         if submitted and user_input.strip():
             st.session_state.messages.append({"role": "user", "content": user_input})
             with st.spinner("Thinking..."):
-                answer = retrieve_and_answer(user_input)
+                answer = retrieve_and_answer(user_input, collection_name=st.session_state.session_id)
             st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
