@@ -13,7 +13,14 @@ except Exception:
     api_key = os.getenv("GOOGLE_API_KEY")
 
 client_ai = genai.Client(api_key=api_key)
-client_db = chromadb.PersistentClient(path="./chroma_db")
+
+# Use in-memory on cloud, persistent locally
+try:
+    import streamlit as st
+    st.secrets["GOOGLE_API_KEY"]
+    client_db = chromadb.EphemeralClient()
+except Exception:
+    client_db = chromadb.PersistentClient(path="./chroma_db")
 
 
 def embed_and_store(chunks: list[str], collection_name: str = "documents"):

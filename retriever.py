@@ -12,7 +12,13 @@ except Exception:
     api_key = os.getenv("GOOGLE_API_KEY")
 
 client_ai = genai.Client(api_key=api_key)
-client_db = chromadb.PersistentClient(path="./chroma_db")
+
+try:
+    import streamlit as st
+    st.secrets["GOOGLE_API_KEY"]
+    client_db = chromadb.EphemeralClient()
+except Exception:
+    client_db = chromadb.PersistentClient(path="./chroma_db")
 
 
 def retrieve_and_answer(query: str, collection_name: str = "documents") -> str:
