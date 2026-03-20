@@ -3,6 +3,7 @@ import os
 import tempfile
 import shutil
 import gc
+import uuid
 from loader import load_document
 from chunker import chunk_text
 from embedder import embed_and_store
@@ -27,7 +28,7 @@ html, body, [class*="css"] {
 
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding: 2rem 3rem; max-width: 1100px; }
-
+            
 .stApp { background: #0a0e1a; }
 
 .hero {
@@ -60,7 +61,7 @@ html, body, [class*="css"] {
     color: rgba(232,234,246,0.45);
     font-weight: 300;
 }
-
+            
 .upload-label {
     font-family: 'DM Mono', monospace;
     font-size: 0.7rem;
@@ -69,7 +70,7 @@ html, body, [class*="css"] {
     color: rgba(232,234,246,0.4);
     margin-bottom: 0.5rem;
 }
-
+            
 [data-testid="stFileUploader"] {
     background: rgba(255,255,255,0.03) !important;
     border: 1px dashed rgba(79,159,255,0.25) !important;
@@ -81,9 +82,9 @@ html, body, [class*="css"] {
     border-color: rgba(79,159,255,0.5) !important;
     background: rgba(79,159,255,0.04) !important;
 }
-
+            
 .msg-wrap { margin-bottom: 1.5rem; }
-
+            
 .msg-you {
     background: rgba(79,159,255,0.08);
     border: 1px solid rgba(79,159,255,0.15);
@@ -111,7 +112,7 @@ html, body, [class*="css"] {
     color: rgba(232,234,246,0.35);
 }
 .msg-label.ai-label { color: #4f9fff; }
-
+            
 .status-pill {
     display: inline-block;
     padding: 0.3rem 0.9rem;
@@ -124,7 +125,7 @@ html, body, [class*="css"] {
     color: #06d6a0;
     margin-bottom: 1.5rem;
 }
-
+            
 [data-testid="stTextInput"] input {
     background: rgba(255,255,255,0.04) !important;
     border: 1px solid rgba(255,255,255,0.1) !important;
@@ -138,7 +139,7 @@ html, body, [class*="css"] {
     border-color: rgba(79,159,255,0.4) !important;
     box-shadow: none !important;
 }
-
+            
 .stButton button {
     background: linear-gradient(135deg, #4f9fff, #8b5cf6) !important;
     color: white !important;
@@ -151,13 +152,13 @@ html, body, [class*="css"] {
     transition: opacity 0.2s !important;
 }
 .stButton button:hover { opacity: 0.85 !important; }
-
+            
 .custom-divider {
     border: none;
     border-top: 1px solid rgba(255,255,255,0.06);
     margin: 2rem 0;
 }
-
+            
 .empty-state {
     text-align: center;
     padding: 3rem 2rem;
@@ -185,14 +186,13 @@ if "doc_name" not in st.session_state:
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 if "session_id" not in st.session_state:
-    import uuid
     st.session_state.session_id = str(uuid.uuid4())[:8]
 
 
 # --- HERO ---
 st.markdown("""
 <div class="hero">
-    <div class="hero-tag">⬡ RAG Document Intelligence</div>
+    <div class="hero-tag">&#x2B21; RAG Document Intelligence</div>
     <div class="hero-title">AskMyDocs</div>
     <div class="hero-sub">Upload any document. Ask anything. Get grounded answers.</div>
 </div>
@@ -205,7 +205,7 @@ col1, col2 = st.columns([1, 1.8], gap="large")
 
 # --- LEFT COLUMN: UPLOAD ---
 with col1:
-    st.markdown('<div class="upload-label">01 — Load your document</div>',
+    st.markdown('<div class="upload-label">01 &mdash; Load your document</div>',
                 unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
@@ -237,11 +237,11 @@ with col1:
     if st.session_state.doc_loaded:
         st.markdown(f"""
         <div class="status-pill">
-            ✓ &nbsp;{st.session_state.doc_name}
+            &#10003; &nbsp;{st.session_state.doc_name}
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown('<div class="upload-label" style="margin-top:1.5rem;">02 — Try asking</div>',
+        st.markdown('<div class="upload-label" style="margin-top:1.5rem;">02 &mdash; Try asking</div>',
                     unsafe_allow_html=True)
 
         suggestions = [
@@ -256,38 +256,38 @@ with col1:
 
         st.markdown("<hr class='custom-divider'>", unsafe_allow_html=True)
 
-    if st.button("🗑 Clear and upload new doc", use_container_width=True):
-       st.session_state.doc_loaded = False
-       st.session_state.doc_name = ""
-       st.session_state.messages = []
-       st.session_state.uploader_key += 1
+        if st.button("Clear and upload new doc", use_container_width=True):
+            st.session_state.doc_loaded = False
+            st.session_state.doc_name = ""
+            st.session_state.messages = []
+            st.session_state.uploader_key += 1
 
-       from embedder import client_db
-       try:
-            client_db.delete_collection(st.session_state.session_id)
-       except Exception:
-            pass
+            from embedder import client_db
+            try:
+                client_db.delete_collection(st.session_state.session_id)
+            except Exception:
+                pass
 
-       gc.collect()
+            gc.collect()
 
-    if os.path.exists("./chroma_db"):
-        try:
-            shutil.rmtree("./chroma_db")
-        except Exception:
-            pass
+            if os.path.exists("./chroma_db"):
+                try:
+                    shutil.rmtree("./chroma_db")
+                except Exception:
+                    pass
 
-    st.rerun()
+            st.rerun()
 
 
 # --- RIGHT COLUMN: CHAT ---
 with col2:
-    st.markdown('<div class="upload-label">03 — Chat with your document</div>',
+    st.markdown('<div class="upload-label">03 &mdash; Chat with your document</div>',
                 unsafe_allow_html=True)
 
     if not st.session_state.doc_loaded:
         st.markdown("""
         <div class="empty-state">
-            <span class="empty-icon">⬡</span>
+            <span class="empty-icon">&#x2B21;</span>
             Upload a document on the left<br/>to start asking questions
         </div>
         """, unsafe_allow_html=True)
@@ -313,17 +313,17 @@ with col2:
             del st.session_state.pending_question
             st.session_state.messages.append({"role": "user", "content": question})
             with st.spinner("Thinking..."):
-                answer = answer = retrieve_and_answer(question, collection_name=st.session_state.session_id)
+                answer = retrieve_and_answer(question, collection_name=st.session_state.session_id)
             st.session_state.messages.append({"role": "assistant", "content": answer})
             st.rerun()
 
         with st.form("chat_form", clear_on_submit=True):
             user_input = st.text_input(
-                "",
+                "Your question",
                 placeholder="Ask anything about your document...",
                 label_visibility="collapsed"
             )
-            submitted = st.form_submit_button("Ask →")
+            submitted = st.form_submit_button("Ask")
 
         if submitted and user_input.strip():
             st.session_state.messages.append({"role": "user", "content": user_input})
