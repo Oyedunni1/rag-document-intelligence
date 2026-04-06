@@ -187,6 +187,8 @@ if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())[:8]
+if "input_source" not in st.session_state:
+    st.session_state.input_source = ""
 
 
 # --- HERO ---
@@ -208,6 +210,17 @@ with col1:
     st.markdown('<div class="upload-label">01 &mdash; Load your document</div>',
                 unsafe_allow_html=True)
 
+    # URL input
+    url_input = st.text_input(
+        "Paste a URL",
+        placeholder="https://example.com/article",
+        label_visibility="collapsed"
+    )
+
+    st.markdown('<div style="text-align:center; color: rgba(232,234,246,0.3); font-family: DM Mono, monospace; font-size:0.72rem; margin: 0.5rem 0;">— or —</div>',
+                unsafe_allow_html=True)
+
+    # File uploader
     uploaded_file = st.file_uploader(
         "Upload a document",
         type=["pdf", "txt", "docx", "csv", "md", "html"],
@@ -215,6 +228,26 @@ with col1:
         key=f"uploader_{st.session_state.uploader_key}"
     )
 
+    # Handle URL input
+    if url_input and url_input != st.session_state.input_source:
+        with st.spinner("Fetching and embedding URL..."):
+            try:
+                from loader import load_url
+                text = load_url(url_input)
+                if not text.strip():
+                    st.error("Could not extract text from that URL.")
+                else:
+                    chunks = chunk_text(text)
+                    embed_and_store(chunks, collection_name=st.session_state.session_id)
+                    st.session_state.doc_loaded = True
+                    st.session_state.doc_name = url_input
+                    st.session_state.input_source = url_input
+                    st.session_state.messages = []
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Failed to load URL: {str(e)}")
+
+    # Handle file upload
     if uploaded_file:
         file_changed = uploaded_file.name != st.session_state.doc_name
         if file_changed:
@@ -231,52 +264,9 @@ with col1:
 
                 st.session_state.doc_loaded = True
                 st.session_state.doc_name = uploaded_file.name
+                st.session_state.input_source = uploaded_file.name
                 st.session_state.messages = []
                 st.rerun()
-
-    if st.session_state.doc_loaded:
-        st.markdown(f"""
-        <div class="status-pill">
-            &#10003; &nbsp;{st.session_state.doc_name}
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown('<div class="upload-label" style="margin-top:1.5rem;">02 &mdash; Try asking</div>',
-                    unsafe_allow_html=True)
-
-        suggestions = [
-            "What is this document about?",
-            "What are the key points?",
-            "Summarise the main argument.",
-            "What conclusions are drawn?",
-        ]
-        for s in suggestions:
-            if st.button(s, key=f"suggest_{s}", use_container_width=True):
-                st.session_state.pending_question = s
-
-        st.markdown("<hr class='custom-divider'>", unsafe_allow_html=True)
-
-        if st.button("Clear and upload new doc", use_container_width=True):
-            st.session_state.doc_loaded = False
-            st.session_state.doc_name = ""
-            st.session_state.messages = []
-            st.session_state.uploader_key += 1
-
-            from embedder import client_db
-            try:
-                client_db.delete_collection(st.session_state.session_id)
-            except Exception:
-                pass
-
-            gc.collect()
-
-            if os.path.exists("./chroma_db"):
-                try:
-                    shutil.rmtree("./chroma_db")
-                except Exception:
-                    pass
-
-            st.rerun()
 
 
 # --- RIGHT COLUMN: CHAT ---
